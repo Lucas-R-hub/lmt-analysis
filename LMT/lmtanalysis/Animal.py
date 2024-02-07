@@ -43,7 +43,7 @@ idAnimalColor = [ None, "red","green","blue","orange"]
 
 from enum import Enum
 
-
+import statistics
 
 def getAnimalColor( animalId ):
     return idAnimalColor[ animalId ]
@@ -992,8 +992,56 @@ class Animal():
         mask = Mask( data, self.getColor( ) )
 
         return mask
+    
+    def getSpeedProfile(self, tmin, tmax, upperThreshold, tFactor, lowerThreshold=0):
+        print("Calculating speed profile for ", self.name)
+        
+        speedList = []
+        for r in range(tmin, tmax+1):
+            speedList.append(self.getSpeed(r))
+        
+        xList = list(range(tmin, tmax+1))
+        
+        #filter out unrealistically high values   
+        for value in speedList:
+            if value == None:
+                pass
+            elif value >= upperThreshold:
+                speedList[speedList.index(value)] = None
+            elif value <= lowerThreshold:
+                speedList[speedList.index(value)] = None
+                
+        #summarize speeds per second
+        if tFactor !=None:
+            if tFactor not in [oneSecond, oneMinute, oneHour]:
+                raise ValueError("Please select 'oneSecond', 'oneMinute', 'oneHour' or 'None' as the tFactor")
+            
+            i=0
+            newSpeedList = []
 
+            for value in range(int(len(speedList)/tFactor)):
+                auxSpeedList = list(filter(lambda item: item is not None, speedList[i:i+tFactor-1]))
+                if not auxSpeedList:
+                    break
+                median = statistics.median(auxSpeedList)
+                newSpeedList.append(median)
+                i=i+tFactor
+            speedList = newSpeedList
+            xList = list(range(1, len(speedList)+1))
+            
+        return xList, speedList
+    
+    def plotSingleSpeedProfile(self , title, tmin, tmax, upperThreshold, tFactor):
 
+        print ("Draw speed profile of animal " + self.name )
+
+        xList, yList = self.getSpeedProfile(tmin, tmax, upperThreshold, tFactor)
+
+        plt.plot( xList, yList, linestyle='-', linewidth=1, alpha=0.5, label= self.name)
+        plt.title( title + self.RFID )
+
+        plt.show()
+        
 class AnimalPool():
     """
     Manages an experiment.
@@ -1600,3 +1648,46 @@ class AnimalPool():
                                     for event_name in all_event_names]
                                 , axis=0)
         return event_table.sort_values("time").reset_index(drop=True)
+    
+    def plotSpeedProfiles(self, show=True , title = None, tmin = 1, tmax = oneHour, saveFile = None, upperSpeedThreshold=50, tFactor=None):
+
+        print( "AnimalPool: plot Speed profile.")
+        nbRows = len( self.getAnimalList() )
+        
+        if nbRows == 1:
+            animal = self.getAnimalList()[0]
+            animal.plotSingleSpeedProfile(title, tmin, tmax, upperSpeedThreshold, tFactor)
+        else: 
+            fig, ax = plt.subplots( nrows = nbRows , ncols = 1 , sharex='all', sharey='all'  )
+        
+            if title==None:
+                title="Speed profile of animals"
+        
+            #draw separated animals
+            for animal in self.getAnimalList():
+                if len(ax) > 1:
+                    axis = ax[self.getAnimalList().index(animal)]
+                else:
+                    axis = ax
+        
+                legendList=[]
+        
+                print ("Compute speed profile of animal " + animal.name )
+                xList, yList = animal.getSpeedProfile(tmin=tmin, tmax=tmax, upperThreshold=upperSpeedThreshold, tFactor = tFactor)
+                print ("Draw speed profile of animal " + animal.name )
+    
+                axis.plot( xList, yList, color= animal.getColor() , linestyle='-', linewidth=1, alpha=0.5, label= animal.RFID )                
+        
+                legendList.append( mpatches.Patch(color=animal.getColor(), label=animal.RFID) )
+                axis.legend( handles = legendList , loc=1 )
+                
+        
+            fig.suptitle( title )
+            
+        
+            if saveFile !=None:
+                print("Saving figure : " + saveFile )
+                fig.savefig( saveFile, dpi=100)
+        
+            if ( show ):
+                plt.show()

@@ -1,0 +1,25 @@
+################################################
+
+examples:
+	- Scripts used as examples to explore data
+	
+lmtanalysis: 
+	- Encoding new behaviors
+	- Major objects:
+		- Animal (Animal, AnimalPool)
+		- Event (Event, EventTimeLine)
+		- Detection
+	- Constant numbers: Measures
+	- Scripts beginning with " Bild ": encode new events
+	
+scripts: 
+	- Executable scripts
+	- Scripts beginning with " Compute ": compute the data, extracting data to conduct statistical analysis
+	
+experimental:
+	- not shared on the git
+	
+LMT_Custom:
+	- self written scripts
+	
+##################################################

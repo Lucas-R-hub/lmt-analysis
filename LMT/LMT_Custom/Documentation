@@ -1,0 +1,40 @@
+Database Structure:
+	
+	Animal:
+		- introduce the genotype or other information manually
+		- do not modify RFID number!
+		
+	Detection:
+		- framenumber
+		- animal ID
+		- (x,y,z) for the nose, the tail basis and the center of mass
+		- rearing, look up, look down
+		
+	Event: 
+		- name
+		- describtion
+		- startframe, endframe
+		- animal ID A, B, C and D
+	
+	Frame:
+		- framenumber
+		- timestamp
+		- number of paritculates
+		- paused
+		
+	Log:
+		- Automatic saving of all the post-processes conducted on the database
+	
+
+Specifics:
+	
+	1. AnimalPool
+		- Animal container
+		- Is constructed with the animals in python, not stored in the database
+		
+	2. EventTimeLine
+		- event container
+		- Is constructed with the events in python, not stored in the database
+		
+	3. Animal & Event:
+		- Funtions starting with " get " will recover one value
