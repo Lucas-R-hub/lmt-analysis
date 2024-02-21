@@ -44,6 +44,7 @@ idAnimalColor = [ None, "red","green","blue","orange"]
 from enum import Enum
 
 import statistics
+from datetime import datetime
 
 def getAnimalColor( animalId ):
     return idAnimalColor[ animalId ]
@@ -1001,15 +1002,6 @@ class Animal():
             speedList.append(self.getSpeed(r))
         
         xList = list(range(tmin, tmax+1))
-        
-        #filter out unrealistically high values   
-        for value in speedList:
-            if value == None:
-                pass
-            elif value >= upperThreshold:
-                speedList[speedList.index(value)] = None
-            elif value <= lowerThreshold:
-                speedList[speedList.index(value)] = None
                 
         #summarize speeds per second
         if tFactor !=None:
@@ -1022,25 +1014,41 @@ class Animal():
             for value in range(int(len(speedList)/tFactor)):
                 auxSpeedList = list(filter(lambda item: item is not None, speedList[i:i+tFactor-1]))
                 if not auxSpeedList:
-                    break
-                median = statistics.median(auxSpeedList)
-                newSpeedList.append(median)
+                    auxSpeedList = [0]    
+                newSpeedList.append(statistics.median(auxSpeedList))
                 i=i+tFactor
             speedList = newSpeedList
             xList = list(range(1, len(speedList)+1))
             
+        #filter out None and threshold
+        i = 0
+        for value in speedList:
+            if value >= upperThreshold:
+                speedList[i] = upperThreshold
+            elif value <= lowerThreshold:
+                speedList[i] = lowerThreshold
+            elif value == None:
+                speedList[i] = 0
+            i += 1
+            
         return xList, speedList
     
-    def plotSingleSpeedProfile(self , title, tmin, tmax, upperThreshold, tFactor):
+    def plotSingleSpeedProfile(self , title, tmin, tmax, upperThreshold, tFactor, xUnit):
 
         print ("Draw speed profile of animal " + self.name )
 
         xList, yList = self.getSpeedProfile(tmin, tmax, upperThreshold, tFactor)
-
+        
+        xlabel = xUnit
+        ylabel = "Meters per second"
+        plt.xlabel(xlabel, fontsize=20)
+        plt.ylabel(ylabel, fontsize=20)
+        
+        plt.ylim(top=upperThreshold)
+        
         plt.plot( xList, yList, linestyle='-', linewidth=1, alpha=0.5, label= self.name)
-        plt.title( title + self.RFID )
+        plt.title( title )
 
-        plt.show()
         
 class AnimalPool():
     """
@@ -1650,13 +1658,30 @@ class AnimalPool():
         return event_table.sort_values("time").reset_index(drop=True)
     
     def plotSpeedProfiles(self, show=True , title = None, tmin = 1, tmax = oneHour, saveFile = None, upperSpeedThreshold=50, tFactor=None):
-
+        
+        def xUnit(input):
+            if input == oneSecond:
+                return "Time [s]"
+            elif input == oneMinute:
+                return "Time [m]"
+            elif input == oneHour:
+                return "Time [h]"
+            else:
+                return None
+            
+        
         print( "AnimalPool: plot Speed profile.")
+        t_start = datetime.now()
+        current_time = t_start.strftime("%H:%M:%S")
+        
+        print("Current time: " + current_time)
+        
+         
         nbRows = len( self.getAnimalList() )
         
         if nbRows == 1:
             animal = self.getAnimalList()[0]
-            animal.plotSingleSpeedProfile(title, tmin, tmax, upperSpeedThreshold, tFactor)
+            animal.plotSingleSpeedProfile(title, tmin, tmax, upperSpeedThreshold, tFactor, xUnit(tFactor))
         else: 
             fig, ax = plt.subplots( nrows = nbRows , ncols = 1 , sharex='all', sharey='all'  )
         
@@ -1675,7 +1700,14 @@ class AnimalPool():
                 print ("Compute speed profile of animal " + animal.name )
                 xList, yList = animal.getSpeedProfile(tmin=tmin, tmax=tmax, upperThreshold=upperSpeedThreshold, tFactor = tFactor)
                 print ("Draw speed profile of animal " + animal.name )
-    
+                
+                xlabel = xUnit(tFactor)
+                ylabel = "Meters per second"
+                plt.xlabel(xlabel, fontsize=20)
+                plt.ylabel(ylabel, fontsize=20)
+                
+                plt.ylim(top=upperThreshold)
+                
                 axis.plot( xList, yList, color= animal.getColor() , linestyle='-', linewidth=1, alpha=0.5, label= animal.RFID )                
         
                 legendList.append( mpatches.Patch(color=animal.getColor(), label=animal.RFID) )
@@ -1685,9 +1717,17 @@ class AnimalPool():
             fig.suptitle( title )
             
         
-            if saveFile !=None:
-                print("Saving figure : " + saveFile )
-                fig.savefig( saveFile, dpi=100)
+        if saveFile !=None:
+            print("Saving figure : " + saveFile )
+            fig.savefig( saveFile, dpi=100)
         
-            if ( show ):
-                plt.show()
+        t_end = datetime.now()
+        current_time = t_end.strftime("%H:%M:%S")
+        
+        print("Done: Plot Speed Profile")
+        print("Current time: " + current_time)
+        print("Total duration: " + str(t_end - t_start))
+        
+        
+        if ( show ):
+            plt.show()
