@@ -8,7 +8,6 @@ import sqlite3
 from lmtanalysis.FileUtil import getFilesToProcess
 from lmtanalysis.Animal import AnimalPool
 from lmtanalysis.Measure import oneSecond, oneMinute, oneHour, oneDay
-from datetime import datetime
 
 if __name__ == '__main__':
     
@@ -28,6 +27,6 @@ if __name__ == '__main__':
         # load all detection (positions) of all animals for the first hour
         animalPool.loadDetection( start = 0, end = oneDay , lightLoad = True )
 
-        animalPool.plotSpeedProfiles(title=input("Enter Mouse ID and Day: "), upperSpeedThreshold=30, tmax= oneDay, tFactor= oneMinute)
+        animalPool.plotSpeedProfiles(title=input("Enter Mouse ID and Day: "), upperSpeedThreshold=30, tmax= oneHour, tFactor= oneMinute)
         
         print("Done: Speed Profiles")

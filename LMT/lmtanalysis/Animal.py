@@ -45,6 +45,8 @@ from enum import Enum
 
 import statistics
 from datetime import datetime
+from LMT_Custom import Graph_Parameters
+from tkinter.filedialog import askdirectory
 
 def getAnimalColor( animalId ):
     return idAnimalColor[ animalId ]
@@ -1032,22 +1034,6 @@ class Animal():
             i += 1
             
         return xList, speedList
-    
-    def plotSingleSpeedProfile(self , title, tmin, tmax, upperThreshold, tFactor, xUnit):
-
-        print ("Draw speed profile of animal " + self.name )
-
-        xList, yList = self.getSpeedProfile(tmin, tmax, upperThreshold, tFactor)
-        
-        xlabel = xUnit
-        ylabel = "Meters per second"
-        plt.xlabel(xlabel, fontsize=20)
-        plt.ylabel(ylabel, fontsize=20)
-        
-        plt.ylim(top=upperThreshold)
-        
-        plt.plot( xList, yList, linestyle='-', linewidth=1, alpha=0.5, label= self.name)
-        plt.title( title )
 
         
 class AnimalPool():
@@ -1657,7 +1643,7 @@ class AnimalPool():
                                 , axis=0)
         return event_table.sort_values("time").reset_index(drop=True)
     
-    def plotSpeedProfiles(self, show=True , title = None, tmin = 1, tmax = oneHour, saveFile = None, upperSpeedThreshold=50, tFactor=None):
+    def plotSpeedProfiles(self, show=True , title = None, tmin = 1, tmax = oneHour, saveFile = False, upperSpeedThreshold=50, tFactor=None):
         
         def xUnit(input):
             if input == oneSecond:
@@ -1679,18 +1665,15 @@ class AnimalPool():
          
         nbRows = len( self.getAnimalList() )
         
-        if nbRows == 1:
-            animal = self.getAnimalList()[0]
-            animal.plotSingleSpeedProfile(title, tmin, tmax, upperSpeedThreshold, tFactor, xUnit(tFactor))
-        else: 
+        if nbRows > 0:
             fig, ax = plt.subplots( nrows = nbRows , ncols = 1 , sharex='all', sharey='all'  )
-        
+            
             if title==None:
                 title="Speed profile of animals"
         
             #draw separated animals
             for animal in self.getAnimalList():
-                if len(ax) > 1:
+                if isinstance(ax, np.ndarray):
                     axis = ax[self.getAnimalList().index(animal)]
                 else:
                     axis = ax
@@ -1702,14 +1685,15 @@ class AnimalPool():
                 print ("Draw speed profile of animal " + animal.name )
                 
                 xlabel = xUnit(tFactor)
-                ylabel = "Meters per second"
-                plt.xlabel(xlabel, fontsize=20)
-                plt.ylabel(ylabel, fontsize=20)
+                ylabel = "Speed [m/s]"
                 
-                plt.ylim(top=upperThreshold)
+                axis.set_xlabel(xlabel, fontsize=Graph_Parameters.xLableFontsize)
+                axis.set_ylabel(ylabel, fontsize=Graph_Parameters.yLableFontsize)
                 
-                axis.plot( xList, yList, color= animal.getColor() , linestyle='-', linewidth=1, alpha=0.5, label= animal.RFID )                
-        
+                plt.ylim(top=upperSpeedThreshold)
+                
+                axis.plot( xList, yList, color= animal.getColor() , linestyle='-', linewidth=1, alpha=0.5, label= animal.RFID ) 
+                               
                 legendList.append( mpatches.Patch(color=animal.getColor(), label=animal.RFID) )
                 axis.legend( handles = legendList , loc=1 )
                 
@@ -1717,7 +1701,8 @@ class AnimalPool():
             fig.suptitle( title )
             
         
-        if saveFile !=None:
+        if saveFile:
+            saveFile = askdirectory(title= "Choose a directory to save to")
             print("Saving figure : " + saveFile )
             fig.savefig( saveFile, dpi=100)
         
@@ -1726,7 +1711,7 @@ class AnimalPool():
         
         print("Done: Plot Speed Profile")
         print("Current time: " + current_time)
-        print("Total duration: " + str(t_end - t_start))
+        print("Elapsed time: " + str(t_end - t_start))
         
         
         if ( show ):
